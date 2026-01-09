@@ -4,7 +4,7 @@ const BASE_URL = `https://tree-hole.onrender.com/239210303`;
 // 页面加载后获取所有留言
 window.onload = getMessages;
 
-// 获取留言列表
+// 获取留言列表并渲染（核心优化：拆分渲染逻辑，避免重复执行）
 function getMessages() {
   fetch(`${BASE_URL}/api/messages`)
     .then(res => {
@@ -12,31 +12,25 @@ function getMessages() {
       return res.json();
     })
     .then(data => {
-      const list = document.getElementById('messageList');
-      list.innerHTML = '';
-      
-      const hotList = document.getElementById('hotList');
-      hotList.innerHTML = '';
-      
-      // 最新留言倒序排列（更符合用户习惯）
-      const sortedData = [...data].reverse();
-      
-      sortedData.forEach(item => {
-        const card = createMessageCard(item);
-        list.appendChild(card);
-        
-        // 热门树洞取点赞数最高的前3条（优化逻辑）
-        const hotData = [...data].sort((a, b) => b.likes - a.likes).slice(0, 3);
-        hotList.innerHTML = '';
-        hotData.forEach(hotItem => {
-          hotList.appendChild(createMessageCard(hotItem));
-        });
-      });
+      // 1. 渲染最新倾诉（倒序）
+      renderMessageList('messageList', [...data].reverse());
+      // 2. 渲染热门树洞（按点赞数降序，取前3）
+      renderMessageList('hotList', [...data].sort((a, b) => b.likes - a.likes).slice(0, 3));
     })
     .catch(err => {
       console.error('获取留言错误:', err);
       alert('获取留言失败，请稍后重试');
     });
+}
+
+// 通用渲染列表函数（抽离复用，解决重复渲染问题）
+function renderMessageList(containerId, data) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  data.forEach(item => {
+    const card = createMessageCard(item);
+    container.appendChild(card);
+  });
 }
 
 // 创建留言卡片
@@ -86,7 +80,7 @@ function submitMessage() {
     .then(() => {
       document.getElementById('name').value = '';
       document.getElementById('content').value = '';
-      getMessages();
+      getMessages(); // 提交后重新渲染列表
     })
     .catch(err => {
       console.error('提交留言错误:', err);
@@ -94,7 +88,7 @@ function submitMessage() {
     });
 }
 
-// 点赞功能
+// 点赞功能（核心修复：点赞后重新获取数据并渲染列表）
 function likeMessage(id) {
   fetch(`${BASE_URL}/api/like`, {
     method: 'POST',
@@ -106,7 +100,13 @@ function likeMessage(id) {
       return res.json();
     })
     .then(data => {
-      document.getElementById(`like-${id}`).innerText = data.likes;
+      // 1. 先更新当前点赞数（无感知刷新）
+      const likeElement = document.getElementById(`like-${id}`);
+      if (likeElement) {
+        likeElement.innerText = data.likes;
+      }
+      // 2. 重新获取最新数据并渲染所有列表（关键：确保点赞数同步）
+      getMessages();
     })
     .catch(err => {
       console.error('点赞错误:', err);
@@ -129,7 +129,7 @@ function deleteMessage(id) {
       return res.json();
     })
     .then(() => {
-      getMessages();
+      getMessages(); // 删除后重新渲染列表
       alert('留言删除成功！');
     })
     .catch(err => {
