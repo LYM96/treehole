@@ -1,11 +1,13 @@
+// 全局变量：基础URL（适配Render环境）
+const BASE_URL = `https://tree-hole.onrender.com/239210303`;
+
 // 页面加载后获取所有留言
 window.onload = getMessages;
 
 // 获取留言列表
 function getMessages() {
-  fetch(`./api/messages`)
+  fetch(`${BASE_URL}/api/messages`)
     .then(res => {
-      // 处理接口返回异常
       if (!res.ok) throw new Error('获取留言失败');
       return res.json();
     })
@@ -13,20 +15,22 @@ function getMessages() {
       const list = document.getElementById('messageList');
       list.innerHTML = '';
       
-      // 渲染热门树洞（简单复用逻辑，可根据实际需求调整）
       const hotList = document.getElementById('hotList');
       hotList.innerHTML = '';
       
-      // 渲染所有留言到最新倾诉区
-      data.forEach(item => {
+      // 最新留言倒序排列（更符合用户习惯）
+      const sortedData = [...data].reverse();
+      
+      sortedData.forEach(item => {
         const card = createMessageCard(item);
         list.appendChild(card);
         
-        // 热门树洞取前3条（示例逻辑）
-        if (data.indexOf(item) < 3) {
-          const hotCard = createMessageCard(item);
-          hotList.appendChild(hotCard);
-        }
+        // 热门树洞取点赞数最高的前3条（优化逻辑）
+        const hotData = [...data].sort((a, b) => b.likes - a.likes).slice(0, 3);
+        hotList.innerHTML = '';
+        hotData.forEach(hotItem => {
+          hotList.appendChild(createMessageCard(hotItem));
+        });
       });
     })
     .catch(err => {
@@ -35,7 +39,7 @@ function getMessages() {
     });
 }
 
-// 创建留言卡片（抽离复用）
+// 创建留言卡片
 function createMessageCard(item) {
   const card = document.createElement('div');
   card.className = 'message-card';
@@ -54,27 +58,25 @@ function createMessageCard(item) {
   return card;
 }
 
-// 提交留言（含输入校验）
+// 提交留言
 function submitMessage() {
   const name = document.getElementById('name').value.trim() || '匿名同学';
   const content = document.getElementById('content').value.trim();
   
-  // 输入校验
   if (!content) {
     alert('留言内容不能为空！');
     return;
   }
 
-  // 获取选中的情绪标签
   const activeMood = document.querySelector('.mood.active').dataset.mood;
 
-  fetch(`./api/messages`, {
+  fetch(`${BASE_URL}/api/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       name, 
       content,
-      mood: activeMood // 可选：传递情绪标签
+      mood: activeMood
     })
   })
     .then(res => {
@@ -82,7 +84,6 @@ function submitMessage() {
       return res.json();
     })
     .then(() => {
-      // 清空输入框并重新获取列表
       document.getElementById('name').value = '';
       document.getElementById('content').value = '';
       getMessages();
@@ -93,9 +94,9 @@ function submitMessage() {
     });
 }
 
-// 点赞功能（无刷新）
+// 点赞功能
 function likeMessage(id) {
-  fetch(`./api/like`, {
+  fetch(`${BASE_URL}/api/like`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id })
@@ -115,12 +116,11 @@ function likeMessage(id) {
 
 // 删除留言功能
 function deleteMessage(id) {
-  // 二次确认，防止误删
   if (!confirm('确定要删除这条留言吗？删除后无法恢复！')) {
     return;
   }
 
-  fetch(`./api/messages/${id}`, {
+  fetch(`${BASE_URL}/api/messages/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' }
   })
@@ -129,7 +129,6 @@ function deleteMessage(id) {
       return res.json();
     })
     .then(() => {
-      // 删除成功后重新加载留言列表
       getMessages();
       alert('留言删除成功！');
     })
@@ -139,7 +138,7 @@ function deleteMessage(id) {
     });
 }
 
-// 情绪标签点击切换（可选功能）
+// 情绪标签切换
 document.querySelectorAll('.mood').forEach(mood => {
   mood.addEventListener('click', function() {
     document.querySelectorAll('.mood').forEach(m => m.classList.remove('active'));
