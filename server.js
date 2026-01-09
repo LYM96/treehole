@@ -1,112 +1,147 @@
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const bodyParser = require('body-parser');
-const path = require('path');
+// 全局变量：基础URL（适配Render环境）
+const BASE_URL = `https://tree-hole.onrender.com/239210303`;
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-// 关键修改：改成你访问的学号 239210303
-const STUDENT_ID = "239210303";
+// 页面加载后获取所有留言
+window.onload = getMessages;
 
-// 新增：解决Render部署的跨域问题
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// 获取留言列表并渲染（核心优化：拆分渲染逻辑，便于复用）
+function getMessages() {
+  fetch(`${BASE_URL}/api/messages`)
+    .then(res => {
+      if (!res.ok) throw new Error('获取留言失败');
+      return res.json();
+    })
+    .then(data => {
+      // 1. 渲染最新倾诉（倒序）
+      renderMessageList('messageList', [...data].reverse());
+      // 2. 渲染热门树洞（按点赞数降序，取前3）
+      renderMessageList('hotList', [...data].sort((a, b) => b.likes - a.likes).slice(0, 3));
+    })
+    .catch(err => {
+      console.error('获取留言错误:', err);
+      alert('获取留言失败，请稍后重试');
+    });
+}
 
-// 中间件
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-// 静态资源挂载（确保public目录路径正确）
-app.use(`/${STUDENT_ID}`, express.static(path.join(__dirname, 'public')));
-
-// 连接数据库（Render是临时文件系统，建议用内存数据库避免文件丢失）
-// 关键修改：改用内存数据库（Render重启后数据会清空，但能正常运行）
-const db = new sqlite3.Database(':memory:', (err) => {
-  if (err) console.error(err.message);
-  console.log('Connected to in-memory SQLite database');
-  // 创建表
-  db.run(`CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    content TEXT NOT NULL,
-    likes INTEGER DEFAULT 0
-  )`, (err) => {
-    if (err) console.error('Create table error:', err.message);
+// 通用渲染列表函数（抽离复用，减少冗余）
+function renderMessageList(containerId, data) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  data.forEach(item => {
+    const card = createMessageCard(item);
+    container.appendChild(card);
   });
-});
+}
 
-// 子路由
-const router = express.Router();
-
-// 获取所有留言
-router.get('/api/messages', (req, res) => {
-  db.all('SELECT * FROM messages', (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-});
+// 创建留言卡片
+function createMessageCard(item) {
+  const card = document.createElement('div');
+  card.className = 'message-card';
+  card.innerHTML = `
+    <div class="name">${item.name || '匿名同学'}</div>
+    <div class="content">${item.content}</div>
+    <div class="btn-container">
+      <button class="like-btn" onclick="likeMessage(${item.id})">
+        👍 <span id="like-${item.id}">${item.likes || 0}</span>
+      </button>
+      <button class="delete-btn" onclick="deleteMessage(${item.id})">
+        🗑️ 删除
+      </button>
+    </div>
+  `;
+  return card;
+}
 
 // 提交留言
-router.post('/api/messages', (req, res) => {
-  const { name, content } = req.body;
-  if (!name || !content) return res.status(400).json({ error: "昵称和内容不能为空" });
-  db.run('INSERT INTO messages (name, content) VALUES (?, ?)', [name, content], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID, name, content, likes: 0 });
-  });
-});
-
-// 点赞接口
-router.post('/api/like', (req, res) => {
-  const { id } = req.body;
-  if (!id || isNaN(id)) return res.status(400).json({ error: "ID必须是数字" });
-  db.run('UPDATE messages SET likes = likes + 1 WHERE id = ?', [id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    db.get('SELECT likes FROM messages WHERE id = ?', [id], (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ likes: row?.likes || 0 });
-    });
-  });
-});
-
-// 删除留言接口
-router.delete('/api/messages/:id', (req, res) => {
-  const { id } = req.params;
-  if (isNaN(id)) {
-    return res.status(400).json({ error: "留言ID必须是数字" });
+function submitMessage() {
+  const name = document.getElementById('name').value.trim() || '匿名同学';
+  const content = document.getElementById('content').value.trim();
+  
+  if (!content) {
+    alert('留言内容不能为空！');
+    return;
   }
-  db.run('DELETE FROM messages WHERE id = ?', [id], function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: "未找到该留言，删除失败" });
-    }
-    res.json({ success: true, message: "留言删除成功" });
+
+  const activeMood = document.querySelector('.mood.active').dataset.mood;
+
+  fetch(`${BASE_URL}/api/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      name, 
+      content,
+      mood: activeMood
+    })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('提交留言失败');
+      return res.json();
+    })
+    .then(() => {
+      document.getElementById('name').value = '';
+      document.getElementById('content').value = '';
+      getMessages(); // 提交后重新渲染所有列表
+    })
+    .catch(err => {
+      console.error('提交留言错误:', err);
+      alert('提交留言失败，请稍后重试');
+    });
+}
+
+// 点赞功能（核心优化：点赞后重新渲染所有列表，实现实时更新）
+function likeMessage(id) {
+  fetch(`${BASE_URL}/api/like`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('点赞失败');
+      return res.json();
+    })
+    .then(data => {
+      // 1. 先更新当前点赞数（无感知刷新）
+      const likeElement = document.getElementById(`like-${id}`);
+      if (likeElement) {
+        likeElement.innerText = data.likes;
+      }
+      // 2. 重新获取并渲染所有列表（热门列表同步更新）
+      getMessages();
+    })
+    .catch(err => {
+      console.error('点赞错误:', err);
+      alert('点赞失败，请稍后重试');
+    });
+}
+
+// 删除留言功能
+function deleteMessage(id) {
+  if (!confirm('确定要删除这条留言吗？删除后无法恢复！')) {
+    return;
+  }
+
+  fetch(`${BASE_URL}/api/messages/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('删除留言失败');
+      return res.json();
+    })
+    .then(() => {
+      getMessages(); // 删除后重新渲染所有列表
+      alert('留言删除成功！');
+    })
+    .catch(err => {
+      console.error('删除留言错误:', err);
+      alert('删除留言失败，请稍后重试');
+    });
+}
+
+// 情绪标签切换
+document.querySelectorAll('.mood').forEach(mood => {
+  mood.addEventListener('click', function() {
+    document.querySelectorAll('.mood').forEach(m => m.classList.remove('active'));
+    this.classList.add('active');
   });
-});
-
-// 挂载子路由
-app.use(`/${STUDENT_ID}`, router);
-
-// 根路径重定向
-app.get('/', (req, res) => {
-  res.redirect(`/${STUDENT_ID}`);
-});
-
-// 处理404
-app.use((req, res) => {
-  res.status(404).json({ error: `路径 ${req.originalUrl} 不存在` });
-});
-
-// 启动服务
-app.listen(PORT, () => {
-  console.log(`服务运行在: http://localhost:${PORT}`);
-  console.log(`访问地址：https://tree-hole.onrender.com/${STUDENT_ID}`);
 });
