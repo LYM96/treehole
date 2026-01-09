@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>树洞 · 说心事的地方</title>
+  <!-- 解决favicon.ico 404 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='90' font-size='90'>🌳</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>树洞 · 说心事的地方</h1>
+    <!-- 留言输入区 -->
+    <div class="input-box">
+      <!-- 随机树洞文案 -->
+      <div class="hole-tip" id="holeTip">在这里，你的心事会被温柔收藏 ✨</div>
+
+      <input type="text" id="name" placeholder="匿名同学（可不填）">
+
+      <!-- 情绪标签 -->
+      <div class="mood-box">
+        <span class="mood active" data-mood="🤍 想倾诉">🤍 想倾诉</span>
+        <span class="mood" data-mood="😄 开心">😄 开心</span>
+        <span class="mood" data-mood="😔 难过">😔 难过</span>
+        <span class="mood" data-mood="😡 生气">😡 生气</span>
+      </div>
+
+      <textarea id="content" placeholder="在这里，把心事交给树洞吧…"></textarea>
+
+      <button onclick="submitMessage()">投入树洞</button>
+    </div>
+
+    <!-- 热门树洞 -->
+    <h2 class="hot-title">🔥 今日热门树洞</h2>
+    <div class="message-list" id="hotList"></div>
+
+    <h2 class="hot-title">🌿 最新倾诉</h2>
+    <div class="message-list" id="messageList"></div>
+  </div>
+
+  <script src="./public/js/main.js"></script>
+</body>
+</html>

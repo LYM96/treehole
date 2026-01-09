@@ -1,0 +1,282 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+/* 浅色背景 + 柔和渐变 */
+body {
+  background: linear-gradient(120deg, #f8f9fa, #e8f4f8);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  color: #334155;
+}
+
+/* 主体容器 - 浅色通透风格 */
+.container {
+  width: 100%;
+  max-width: 800px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(149, 157, 165, 0.1);
+  padding: 40px;
+  border: 1px solid #e2e8f0;
+  margin: 30px auto;
+}
+
+/* 标题样式 - 柔和蓝调 */
+h1 {
+  text-align: center;
+  color: #4f46e5;
+  margin-bottom: 30px;
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hot-title {
+  color: #2563eb;
+  margin: 30px 0 15px 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+  border-left: 4px solid #60a5fa;
+  padding-left: 12px;
+}
+
+/* 输入区域 - 浅蓝清新风格 */
+.input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 40px;
+  padding: 30px;
+  background: #f0f7ff;
+  border-radius: 20px;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+/* 输入框样式 - 浅色通透 */
+input, textarea {
+  padding: 16px 20px;
+  border: 1px solid #e0e7ff;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
+  color: #1e293b;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94a3b8;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1);
+  background: white;
+}
+
+textarea {
+  height: 140px;
+  resize: none;
+  line-height: 1.6;
+}
+
+/* 提交按钮 - 柔和蓝 */
+button {
+  padding: 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+button:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* 留言列表容器 */
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 情绪标签样式 */
+.mood-box {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mood {
+  padding: 8px 18px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  border: 1px solid #e2e8f0;
+}
+
+.mood.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.mood:hover:not(.active) {
+  background: #e0e7ff;
+  border-color: #c7d2fe;
+}
+
+/* 树洞提示文案 */
+.hole-tip {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  margin-bottom: 5px;
+}
+
+/* 留言卡片 - 浅色精致风格 */
+.message-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: white;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* 卡片左侧渐变条 */
+.message-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #60a5fa, #93c5fd);
+}
+
+/* 卡片悬浮效果 */
+.message-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.message-card .name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-card .name::before {
+  content: "👤";
+  font-size: 1rem;
+}
+
+.message-card .content {
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+/* 按钮容器 */
+.btn-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 点赞按钮 - 浅灰清新 */
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.like-btn:hover {
+  background: #eff6ff;
+  color: #3b82f6;
+  border-color: #bfdbfe;
+}
+
+.like-btn span {
+  font-weight: 600;
+}
+
+/* 删除按钮 - 柔和红 */
+.delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  color: #ef4444;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px;
+    margin: 15px auto;
+  }
+  
+  .input-box {
+    padding: 20px;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  .message-card {
+    padding: 20px;
+  }
+}
