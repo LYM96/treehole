@@ -61,6 +61,24 @@ router.post('/api/like', (req, res) => {
     });
   });
 });
+
+// 删除留言接口
+router.delete('/api/messages/:id', (req, res) => {
+  // 获取前端传过来的留言ID
+  const messageId = req.params.id;
+  // 根据ID删除对应留言
+  db.run('DELETE FROM messages WHERE id = ?', [messageId], function(err) {
+    if (err) {
+      return res.status(500).json({ error: "删除留言失败：" + err.message });
+    }
+    // 判断是否真的删除了数据
+    if (this.changes > 0) {
+      res.json({ success: true, msg: "留言删除成功" });
+    } else {
+      res.status(404).json({ error: "该留言不存在或已被删除" });
+    }
+  });
+});
 // 挂载静态资源到学号路径
 app.use(`/${STUDENT_ID}`, express.static('public'));
 // 挂载子路由到学号路径
